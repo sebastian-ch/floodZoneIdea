@@ -29,7 +29,7 @@
         .legend {
             padding: 6px 8px;
             font-size: 1em;
-            
+
             box-shadow: 0 0 5px;
             border-radius: 5px;
             font-family: Lato, sans-serif;
@@ -77,12 +77,28 @@
             scrollWheelZoom: false,
             boxZoom: false
         });
-        const basemap = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+
+
+        map.createPane('labels');
+        map.getPane('labels').style.zIndex = 650;
+        map.getPane('labels').style.pointerEvents = 'none';
+
+
+
+
+
+        const basemap = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
             subdomains: 'abcd',
             maxZoom: 14,
             minZoom: 0
         }).addTo(map);
+
+        var labels = L.tileLayer(
+                'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png', {
+                    maxZoom: 18,
+                    pane: 'labels'
+                }).addTo(map);
 
 
         var cur_bounds = map.getBounds();
@@ -112,8 +128,6 @@
                 addLomrs(featureCollection);
             })
 
-
-
         floodZones.query()
             .intersects(cur_bounds)
             .fields(['OBJECTID', 'FLD_ZONE', 'SFHA_TF'])
@@ -128,7 +142,7 @@
 
         LOMAs.query()
             .intersects(cur_bounds)
-            .fields(['OBJECTID', 'CASENUMBER', 'STATUS', 'DETERMINATIONTYPE', 'REVAL_STAT', 'LOTTYPE', 'OUTCOME', 'PROJECTNAME', 'COMMUNITYNAME', 'CID','PDFHYPERLINKID'])
+            .fields(['OBJECTID', 'CASENUMBER', 'STATUS', 'DETERMINATIONTYPE', 'REVAL_STAT', 'LOTTYPE', 'OUTCOME', 'PROJECTNAME', 'COMMUNITYNAME', 'CID', 'PDFHYPERLINKID'])
             .run((error, featureCollection, response) => {
                 if (error) console.log(error);
                 addLomas(featureCollection);
@@ -187,7 +201,7 @@
 
             const linkStart = 'https://map1.msc.fema.gov/data/';
             const fipsVA = '51/';
-            
+
 
             const lomas = L.geoJson(fc, {
 
@@ -196,10 +210,10 @@
                 },
 
                 onEachFeature: function(feature, layer) {
-                    layer.bindPopup(feature.properties.CASENUMBER + '<br>' + 
-                                    feature.properties.PROJECTNAME + '<br><a href="' +
-                                    linkStart + fipsVA + 'L/' + feature.properties.PDFHYPERLINKID + '.pdf" target="_blank">Download</a>'
-                                    );
+                    layer.bindPopup(feature.properties.CASENUMBER + '<br>' +
+                        feature.properties.PROJECTNAME + '<br><a href="' +
+                        linkStart + fipsVA + 'L/' + feature.properties.PDFHYPERLINKID + '.pdf" target="_blank">Download</a>'
+                    );
                 },
                 style: {
                     weight: 0.4,
