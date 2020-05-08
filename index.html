@@ -128,7 +128,7 @@
 
         LOMAs.query()
             .intersects(cur_bounds)
-            .fields(['OBJECTID', 'CASENUMBER', 'STATUS', 'DETERMINATIONTYPE', 'REVAL_STAT', 'LOTTYPE', 'OUTCOME', 'PROJECTNAME'])
+            .fields(['OBJECTID', 'CASENUMBER', 'STATUS', 'DETERMINATIONTYPE', 'REVAL_STAT', 'LOTTYPE', 'OUTCOME', 'PROJECTNAME', 'COMMUNITYNAME', 'CID','PDFHYPERLINKID'])
             .run((error, featureCollection, response) => {
                 if (error) console.log(error);
                 addLomas(featureCollection);
@@ -136,8 +136,6 @@
 
 
         function makeMap(fc) {
-
-
             const fzones = L.geoJson(fc, {
 
                 onEachFeature: function(feature, layer) {
@@ -187,6 +185,10 @@
 
             console.log(fc);
 
+            const linkStart = 'https://map1.msc.fema.gov/data/';
+            const fipsVA = '51/';
+            
+
             const lomas = L.geoJson(fc, {
 
                 pointToLayer: function(fc, latlng) {
@@ -194,7 +196,10 @@
                 },
 
                 onEachFeature: function(feature, layer) {
-                    layer.bindPopup(feature.properties.CASENUMBER + '<br>' + feature.properties.PROJECTNAME + '<br>');
+                    layer.bindPopup(feature.properties.CASENUMBER + '<br>' + 
+                                    feature.properties.PROJECTNAME + '<br><a href="' +
+                                    linkStart + fipsVA + 'L/' + feature.properties.PDFHYPERLINKID + '.pdf" target="_blank">Download</a>'
+                                    );
                 },
                 style: {
                     weight: 0.4,
