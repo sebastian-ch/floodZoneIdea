@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel='shortcut icon' type='image/x-icon' href='favicon.ico' />
+    <title>flood</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
+
+
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/esri-leaflet/dist/esri-leaflet.js"></script>
+
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .legend {
+            padding: 6px 8px;
+            font-size: 1em;
+            /* background: rgba(255, 255, 255, 0.8);
+            background: whitesmoke;  */
+            box-shadow: 0 0 5px;
+            border-radius: 5px;
+            font-family: Lato, sans-serif;
+        }
+
+        .legend h3 {
+            font-size: 1.1em;
+            font-weight: normal;
+            color: #001323;
+            margin: 0 0 10px 0;
+        }
+
+        .legend span {
+            width: 20px;
+            height: 20px;
+            float: left;
+            margin: 0 10px 4px 0;
+            border: solid 1.5px;
+        }
+
+        .legend label {
+            font-size: 1.1em;
+        }
+
+        .legend label:after {
+            content: '';
+            display: block;
+            clear: both;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id='map'></div>
+
+    <script>
+        const map = L.map('map', {
+            center: [37.5361, -77.4398],
+            zoom: 13,
+            keyboard: false,
+            zoomControl: false,
+            dragging: false,
+            doubleClickZoom: false,
+            scrollWheelZoom: false,
+            boxZoom: false
+        });
+        const basemap = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 14,
+            minZoom: 0
+        }).addTo(map);
+
+
+        var cur_bounds = map.getBounds();
+
+        const floodZones = L.esri.featureLayerService({
+            url: 'https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28'
+        });
+
+        const firmIDs = L.esri.featureLayerService({
+            url: 'https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/3'
+        });
+
+        const LOMRs = L.esri.featureLayerService({
+            url: 'https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/1'
+        });
+        const LOMAs = L.esri.featureLayerService({
+            url: 'https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/2'
+        });
+
+        LOMRs.query()
+            .intersects(cur_bounds)
+            .fields(['OBJECTID', 'LOMR_ID', 'CASE_NO', 'EFF_DATE', 'STATUS'])
+            .precision(4)
+            .simplify(map, 0.25)
+            .run((error, featureCollection, response) => {
+                if (error) console.log(error);
+                addLomrs(featureCollection);
+            })
+
+
+
+        floodZones.query()
+            .intersects(cur_bounds)
+            .fields(['OBJECTID', 'FLD_ZONE', 'SFHA_TF'])
+            .where("SHAPE.AREA >= '.000001'")
+            .where("NOT ZONE_SUBTY = 'AREA OF MINIMAL FLOOD HAZARD'")
+            .precision(4)
+            .simplify(map, 0.25)
+            .run(function(error, featureCollection, response) {
+                if (error) console.log(error);
+                //console.log(response);
+                makeMap(featureCollection);
+            })
+
+        LOMAs.query()
+            .intersects(cur_bounds)
+            .fields(['OBJECTID', 'CASENUMBER', 'STATUS', 'DETERMINATIONTYPE', 'REVAL_STAT', 'LOTTYPE', 'OUTCOME', 'PROJECTNAME'])
+            .run((error, featureCollection, response) => {
+                if (error) console.log(error);
+                addLomas(featureCollection);
+            })
+
+
+        function makeMap(fc) {
+
+
+            const fzones = L.geoJson(fc, {
+
+                onEachFeature: function(feature, layer) {
+                    layer.bindPopup(feature.properties.FLD_ZONE);
+                },
+
+                //style it based on flood zone type
+                style: function(feature) {
+
+                    if (feature.properties["FLD_ZONE"] == 'X') {
+                        return {
+                            color: '#448ee4',
+                            fillOpacity: 0.2,
+                            weight: 1
+                        }
+                    } else {
+                        return {
+
+                            color: '#dc2b28',
+                            fillOpacity: 0.2,
+                            weight: 1
+                        }
+                    }
+                }
+            }).addTo(map);
+
+        }
+
+        function addLomrs(fc) {
+
+            const lomrZones = L.geoJson(fc, {
+
+                onEachFeature: function(feature, layer) {
+                    layer.bindPopup(feature.properties.STATUS);
+                },
+                //style it based on flood zone type
+                style: {
+                    weight: 2,
+                    fillOpacity: 0,
+                    color: 'purple'
+
+                }
+            }).addTo(map);
+
+        }
+
+
+        function addLomas(fc) {
+
+            console.log(fc);
+
+            const lomas = L.geoJson(fc, {
+
+                pointToLayer: function(fc, latlng) {
+                    return L.circle(latlng, { radius: 80 })
+                },
+
+                onEachFeature: function(feature, layer) {
+                    layer.bindPopup(feature.properties.CASENUMBER + '<br>' + feature.properties.PROJECTNAME + '<br>');
+                },
+                //style it based on flood zone type
+                style: {
+                    weight: 0.4,
+                    fillOpacity: 0.3,
+                    color: 'green',
+
+                }
+            }).addTo(map);
+
+        }
+
+
+        addLegend();
+
+
+        function addLegend() {
+            const legend = L.control({
+                position: 'bottomleft'
+            });
+
+            legend.onAdd = function() {
+                //creates the div for the legend
+                var div = L.DomUtil.create('div', 'legend');
+
+                //adds first line of legend
+                div.innerHTML = "<h3>" + 'legend' + "</h3>";
+                div.innerHTML += '<span style="background:purple"></span> ' + '<label>LOMR</label>';
+                div.innerHTML += '<span style="background:red"></span> ' + '<label>100 yr flood zone</label>';
+                div.innerHTML += '<span style="background:blue"></span> ' + '<label>500 yr flood zone</label>';
+                div.innerHTML += '<span style="background:green"></span> ' + '<label>LOMA</label>';
+
+
+
+
+
+
+                return div;
+            };
+
+
+            legend.addTo(map);
+        }
+    </script>
+
+</body>
+
+</html>
