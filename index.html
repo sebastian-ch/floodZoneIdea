@@ -9,7 +9,6 @@
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
 
-
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
     <script src="https://unpkg.com/esri-leaflet/dist/esri-leaflet.js"></script>
 
@@ -30,8 +29,7 @@
         .legend {
             padding: 6px 8px;
             font-size: 1em;
-            /* background: rgba(255, 255, 255, 0.8);
-            background: whitesmoke;  */
+            
             box-shadow: 0 0 5px;
             border-radius: 5px;
             font-family: Lato, sans-serif;
@@ -125,7 +123,6 @@
             .simplify(map, 0.25)
             .run(function(error, featureCollection, response) {
                 if (error) console.log(error);
-                //console.log(response);
                 makeMap(featureCollection);
             })
 
@@ -147,7 +144,6 @@
                     layer.bindPopup(feature.properties.FLD_ZONE);
                 },
 
-                //style it based on flood zone type
                 style: function(feature) {
 
                     if (feature.properties["FLD_ZONE"] == 'X') {
@@ -176,7 +172,6 @@
                 onEachFeature: function(feature, layer) {
                     layer.bindPopup(feature.properties.STATUS);
                 },
-                //style it based on flood zone type
                 style: {
                     weight: 2,
                     fillOpacity: 0,
@@ -201,7 +196,6 @@
                 onEachFeature: function(feature, layer) {
                     layer.bindPopup(feature.properties.CASENUMBER + '<br>' + feature.properties.PROJECTNAME + '<br>');
                 },
-                //style it based on flood zone type
                 style: {
                     weight: 0.4,
                     fillOpacity: 0.3,
@@ -222,20 +216,12 @@
             });
 
             legend.onAdd = function() {
-                //creates the div for the legend
                 var div = L.DomUtil.create('div', 'legend');
-
-                //adds first line of legend
                 div.innerHTML = "<h3>" + 'legend' + "</h3>";
                 div.innerHTML += '<span style="background:purple"></span> ' + '<label>LOMR</label>';
                 div.innerHTML += '<span style="background:red"></span> ' + '<label>100 yr flood zone</label>';
                 div.innerHTML += '<span style="background:blue"></span> ' + '<label>500 yr flood zone</label>';
                 div.innerHTML += '<span style="background:green"></span> ' + '<label>LOMA</label>';
-
-
-
-
-
 
                 return div;
             };
